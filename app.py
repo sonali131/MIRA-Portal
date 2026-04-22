@@ -1,5 +1,6 @@
 import streamlit as st
 import re
+import time  # मैसेज दिखाने के लिए समय देने हेतु
 from database_utils import init_db, add_contact, get_all_contacts, update_contact, delete_contact
 
 # 1. Configuration
@@ -39,24 +40,16 @@ with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/3774/3774299.png", width=80)
     st.title("MIRA Portal")
     
-    # Theme Toggle
     if st.button(f"🌙 Switch to { 'Light' if st.session_state.theme == 'Dark' else 'Dark' } Mode"):
         toggle_theme()
         st.rerun()
     
     st.markdown("---")
-    # Separate Sections as requested
-    menu = [
-        "🌐 View Directory", 
-        "➕ Add New Contact", 
-        "✏️ Update Contact", 
-        "🗑️ Delete Contact"
-    ]
+    menu = ["🌐 View Directory", "➕ Add New Contact", "✏️ Update Contact", "🗑️ Delete Contact"]
     choice = st.radio("Navigation Menu", menu)
     st.markdown("---")
     st.write("Logged in as: **Admin User**")
 
-# --- HELPER FUNCTIONS ---
 def is_valid_email(email):
     return re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email)
 
@@ -109,8 +102,7 @@ elif choice == "➕ Add New Contact":
             else:
                 success, msg = add_contact(fname, lname, addr, email, phone)
                 if success:
-                    st.success(f"Success: {fname} {lname} added to database.")
-                    # Balloons Removed as requested
+                    st.success(f"✅ Success: {fname} {lname} added to database.")
                 else:
                     st.error(msg)
 
@@ -136,7 +128,8 @@ elif choice == "✏️ Update Contact":
             
             if st.form_submit_button("Update Information"):
                 update_contact(cid, u_fn, u_ln, u_addr, u_email, u_phone)
-                st.success("Database updated successfully.")
+                st.success("✅ Database updated successfully!")
+                time.sleep(1.5) # 1.5 सेकंड का इंतज़ार ताकि यूज़र मैसेज देख सके
                 st.rerun()
 
 # 4. DELETE SECTION
@@ -154,5 +147,6 @@ elif choice == "🗑️ Delete Contact":
         st.warning(f"Are you sure you want to delete record ID #{cid}?")
         if st.button("Confirm Permanent Deletion"):
             delete_contact(cid)
-            st.success("Record deleted.")
+            st.success("🗑️ Record deleted successfully!")
+            time.sleep(1.5) 
             st.rerun()
