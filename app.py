@@ -2,7 +2,7 @@ import streamlit as st
 import re
 from database_utils import init_db, add_contact, get_all_contacts, update_contact, delete_contact
 
-# 1. Configration
+# 1. Configuration
 st.set_page_config(page_title="MIRA | Patient Management", page_icon="🏥", layout="wide")
 
 # 2. THEME LOGIC For Light And Dark Mode
@@ -17,7 +17,7 @@ light_css = """
 <style>
     .main { background-color: #f8f9fa; color: #212529; }
     .contact-card { background-color: white; border: 1px solid #dee2e6; color: #212529; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #007bff; }
-    .main-title { color: #007bff; font-weight: bold; text-align: center; font-size: 35px; }
+    .main-title { color: #007bff; font-weight: bold; text-align: center; font-size: 35px; margin-bottom: 20px; }
 </style>
 """
 
@@ -25,130 +25,134 @@ dark_css = """
 <style>
     .main { background-color: #0e1117; color: white; }
     .contact-card { background-color: #262730; border: 1px solid #464855; color: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #00d4ff; }
-    .main-title { color: #00d4ff; font-weight: bold; text-align: center; font-size: 35px; }
+    .main-title { color: #00d4ff; font-weight: bold; text-align: center; font-size: 35px; margin-bottom: 20px; }
 </style>
 """
 
-# Theme
 st.markdown(dark_css if st.session_state.theme == 'Dark' else light_css, unsafe_allow_html=True)
 
-# Start/initilazation of database
+# Initialize Database
 init_db()
 
-# --- SIDEBAR ---
+# --- SIDEBAR NAVIGATION ---
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/3774/3774299.png", width=80)
     st.title("MIRA Portal")
     
-    # THEME TOGGLE BUTTON
-    st.markdown("---")
+    # Theme Toggle
     if st.button(f"🌙 Switch to { 'Light' if st.session_state.theme == 'Dark' else 'Dark' } Mode"):
         toggle_theme()
         st.rerun()
     
     st.markdown("---")
-    menu = ["🌐 View Directory", "➕ New Registration", "⚙️ Database Tools"]
+    # Separate Sections as requested
+    menu = [
+        "🌐 View Directory", 
+        "➕ Add New Contact", 
+        "✏️ Update Contact", 
+        "🗑️ Delete Contact"
+    ]
     choice = st.radio("Navigation Menu", menu)
     st.markdown("---")
     st.write("Logged in as: **Admin User**")
 
-# --- MAIN LOGIC ---
-
+# --- HELPER FUNCTIONS ---
 def is_valid_email(email):
     return re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email)
 
+# --- PAGE LOGIC ---
+
+# 1. VIEW SECTION
 if choice == "🌐 View Directory":
     st.markdown("<div class='main-title'>🏥 MIRA Patient Directory</div>", unsafe_allow_html=True)
-    
     contacts = get_all_contacts()
     
-    #Dashboard
     c1, c2, c3 = st.columns(3)
-    c1.metric("Registered Patients", len(contacts))
-    c2.metric("Server Status", "Online")
-    c3.metric("Data Sync", "Local SQL")
+    c1.metric("Total Records", len(contacts))
+    c2.metric("Database Status", "Active")
+    c3.metric("Platform", "MIRA Core")
 
-    st.markdown("### 🔍 Search & Filter")
-    search_query = st.text_input("", placeholder="Type name or email to search...")
+    search_query = st.text_input("🔍 Search Patients", placeholder="Enter name or email...")
 
     if contacts:
         for c in contacts:
             if search_query.lower() in c['first_name'].lower() or search_query.lower() in c['email'].lower():
                 st.markdown(f"""
                     <div class="contact-card">
-                        <div style="display:flex; justify-content:space-between;">
-                            <span style="font-size:18px;"><b>👤 {c['first_name']} {c['last_name']}</b></span>
-                            <span style="color:gray; font-size:12px;">ID: #{c['id']}</span>
-                        </div>
-                        <div style="margin-top:8px; font-size:14px;">
+                        <b>👤 {c['first_name']} {c['last_name']}</b> (ID: #{c['id']})<br>
+                        <div style="font-size:14px; margin-top:5px;">
                             📩 {c['email']} | 📞 {c['phone']}<br>
                             📍 {c['address']}
                         </div>
                     </div>
                 """, unsafe_allow_html=True)
     else:
-        st.info("No records found. Use the 'New Registration' tab to add patients.")
+        st.info("The directory is currently empty.")
 
-elif choice == "➕ New Registration":
-    st.markdown("<div class='main-title'>➕ Patient Onboarding</div>", unsafe_allow_html=True)
+# 2. ADD SECTION
+elif choice == "➕ Add New Contact":
+    st.markdown("<div class='main-title'>➕ Register New Patient</div>", unsafe_allow_html=True)
     
-    with st.container():
-        with st.form("reg_form", clear_on_submit=True):
-            st.write("Please fill in the medical contact details below:")
-            col1, col2 = st.columns(2)
-            fname = col1.text_input("First Name", placeholder="Enter first name")
-            lname = col2.text_input("Last Name", placeholder="Enter last name")
-            
-            email = st.text_input("Official Email ID", placeholder="example@clinic.com")
-            phone = st.text_input("Phone Number", placeholder="+91 XXX-XXX-XXXX")
-            
-            addr = st.text_area("Residential Address", placeholder="Street, City, State...")
-            
-            submitted = st.form_submit_button("✅ Register Patient")
-            
-            if submitted:
-                if not (fname and lname and email and phone):
-                    st.error("Missing required fields (*)")
-                elif not is_valid_email(email):
-                    st.warning("Invalid email format.")
+    with st.form("add_form", clear_on_submit=True):
+        col1, col2 = st.columns(2)
+        fname = col1.text_input("First Name")
+        lname = col2.text_input("Last Name")
+        email = st.text_input("Email ID")
+        phone = st.text_input("Phone Number")
+        addr = st.text_area("Address")
+        
+        if st.form_submit_button("Save Record"):
+            if not (fname and lname and email and phone):
+                st.error("Please fill all required fields.")
+            elif not is_valid_email(email):
+                st.warning("Invalid email format.")
+            else:
+                success, msg = add_contact(fname, lname, addr, email, phone)
+                if success:
+                    st.success(f"Success: {fname} {lname} added to database.")
+                    # Balloons Removed as requested
                 else:
-                    success, msg = add_contact(fname, lname, addr, email, phone)
-                    if success:
-                        st.success(f"Record for {fname} has been safely encrypted and saved.")
-                        st.balloons()
-                    else:
-                        st.error(msg)
+                    st.error(msg)
 
-elif choice == "⚙️ Database Tools":
-    st.markdown("<div class='main-title'>⚙️ Record Management</div>", unsafe_allow_html=True)
-    
+# 3. UPDATE SECTION
+elif choice == "✏️ Update Contact":
+    st.markdown("<div class='main-title'>✏️ Edit Existing Record</div>", unsafe_allow_html=True)
     contacts = get_all_contacts()
-    if contacts:
+    
+    if not contacts:
+        st.info("No records available to update.")
+    else:
         options = [f"{c['id']} - {c['first_name']} {c['last_name']}" for c in contacts]
-        selected_option = st.selectbox("Select patient to modify", options)
-        cid = int(selected_option.split(" - ")[0])
+        selected = st.selectbox("Select patient to edit", options)
+        cid = int(selected.split(" - ")[0])
         curr = next(c for c in contacts if c['id'] == cid)
 
-        col_a, col_b = st.columns([2, 1])
-
-        with col_a:
-            st.markdown("#### ✏️ Edit Profile")
-            with st.form("edit_form"):
-                u_fn = st.text_input("First Name", value=curr['first_name'])
-                u_ln = st.text_input("Last Name", value=curr['last_name'])
-                u_email = st.text_input("Email", value=curr['email'])
-                u_phone = st.text_input("Phone", value=curr['phone'])
-                u_addr = st.text_area("Address", value=curr['address'])
-                
-                if st.form_submit_button("Update Records"):
-                    update_contact(cid, u_fn, u_ln, u_addr, u_email, u_phone)
-                    st.toast("Success: Database updated.")
-                    st.rerun()
-
-        with col_b:
-            st.markdown("#### 🗑️ Deletion")
-            st.warning("Once deleted, medical records cannot be recovered.")
-            if st.button("Confirm Deletion", type="secondary"):
-                delete_contact(cid)
-                st.toast("Record deleted.")
+        with st.form("edit_form"):
+            u_fn = st.text_input("First Name", value=curr['first_name'])
+            u_ln = st.text_input("Last Name", value=curr['last_name'])
+            u_email = st.text_input("Email", value=curr['email'])
+            u_phone = st.text_input("Phone", value=curr['phone'])
+            u_addr = st.text_area("Address", value=curr['address'])
+            
+            if st.form_submit_button("Update Information"):
+                update_contact(cid, u_fn, u_ln, u_addr, u_email, u_phone)
+                st.success("Database updated successfully.")
                 st.rerun()
+
+# 4. DELETE SECTION
+elif choice == "🗑️ Delete Contact":
+    st.markdown("<div class='main-title'>🗑️ Remove Record</div>", unsafe_allow_html=True)
+    contacts = get_all_contacts()
+    
+    if not contacts:
+        st.info("No records available to delete.")
+    else:
+        options = [f"{c['id']} - {c['first_name']} {c['last_name']}" for c in contacts]
+        selected = st.selectbox("Select patient to permanently remove", options)
+        cid = int(selected.split(" - ")[0])
+        
+        st.warning(f"Are you sure you want to delete record ID #{cid}?")
+        if st.button("Confirm Permanent Deletion"):
+            delete_contact(cid)
+            st.success("Record deleted.")
+            st.rerun()
