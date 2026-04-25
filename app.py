@@ -52,15 +52,23 @@ elif choice == "➕ Add New Contact":
         em = st.text_input("Email ID")
         ph = st.text_input("Phone Number")
         ad = st.text_area("Address")
+        
         if st.form_submit_button("Save Record"):
-            if not (fn and ln and em and ph):
+            # .strip() remove space
+            fn_clean = fn.strip()
+            ln_clean = ln.strip()
+            em_clean = em.strip()
+            ph_clean = ph.strip()
+            ad_clean = ad.strip()
+
+            if not (fn_clean and ln_clean and em_clean and ph_clean):
                 st.error("All fields are mandatory.")
-            elif not is_valid_email(em):
-                st.error(f"Error: '{em}' is an invalid email format.")
-            elif not is_valid_phone(ph):
-                st.error(f"Error: Phone Number '{ph}' must contain digits only.")
+            elif not is_valid_email(em_clean):
+                st.error(f"Error: '{em_clean}' is an invalid email format.")
+            elif not is_valid_phone(ph_clean):
+                st.error(f"Error: Phone Number '{ph_clean}' must contain digits only.")
             else:
-                success, msg = add_contact(fn, ln, ad, em, ph)
+                success, msg = add_contact(fn_clean, ln_clean, ad_clean, em_clean, ph_clean)
                 if success: st.success(msg)
                 else: st.error(msg)
 
