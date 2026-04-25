@@ -34,10 +34,15 @@ def get_all_contacts():
         rows = cursor.fetchall()
         return [dict(row) for row in rows]
 
+# UPDATED: This now updates ALL fields
 def update_contact(cid, fn, ln, addr, email, phone):
-    with get_connection() as conn:
-        conn.execute('''UPDATE contacts SET first_name=?, last_name=?, address=?, email=?, phone=? 
-                     WHERE id=?''', (fn, ln, addr, email, phone, cid))
+    try:
+        with get_connection() as conn:
+            conn.execute('''UPDATE contacts SET first_name=?, last_name=?, address=?, email=?, phone=? 
+                         WHERE id=?''', (fn, ln, addr, email, phone, cid))
+        return True, "Update Successful"
+    except sqlite3.IntegrityError:
+        return False, "Update Failed: Email or Phone already exists."
 
 def delete_contact(cid):
     with get_connection() as conn:
