@@ -32,7 +32,6 @@ def get_all_contacts():
         conn.row_factory = sqlite3.Row  
         cursor = conn.execute("SELECT * FROM contacts")
         rows = cursor.fetchall()
-        # List of Dict
         return [dict(row) for row in rows]
 
 def update_contact(cid, fn, ln, addr, email, phone):
